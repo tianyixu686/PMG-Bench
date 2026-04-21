@@ -10,3 +10,14 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
+# Userpref benchmark (do not commit local paths or generated artifacts)
+data/userpref_v1/sources.json
+data/userpref_v1/splits.json
+data/userpref_v1/processed_dataset/
+data/userpref_v1/manifests/
+data/userpref_v1/dreambooth/
+data/userpref_v1/images/
+
+# Method outputs
+outputs/
