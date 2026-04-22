@@ -55,7 +55,12 @@ def _read_prompts_txt(prompts_txt: Path) -> Dict[str, str]:
 
 
 def _load_merged_items_map(merged_json: Path) -> Dict[str, Dict[str, str]]:
-    """Map image_id -> {"image_path": <str>, "prompt_simple": <str>}"""
+    """Map image_id -> {"image_path": <str>, "prompt_simple": <str>, "canonical_image_id": <str>}.
+
+    Notes:
+    - If `image_path` contains a filename like `0017713.jpg`, we treat `0017713` as canonical id (keeps leading zeros).
+    - We also add an alias key with leading zeros stripped (e.g. `17713`) to support numeric ids from rating JSON.
+    """
     with merged_json.open("r", encoding="utf-8") as f:
         data = json.load(f)
 
@@ -65,24 +70,53 @@ def _load_merged_items_map(merged_json: Path) -> Dict[str, Dict[str, str]]:
             image_path = it.get("image_path")
             prompt_simple = it.get("prompt_simple")
 
-            image_id = str(it.get("image_id", "") or "").strip()
-            if not image_id:
-                # Current merged_data_with_simple*.json may not carry image_id;
-                # derive from `image_path`, e.g. images/0017713.jpg -> 17713
-                if isinstance(image_path, str):
-                    m = re.search(r"(?:^|/)(\d{5,})\.(?:jpg|jpeg|png)$", image_path, flags=re.IGNORECASE)
-                    if m:
-                        image_id = str(int(m.group(1)))
+            image_id_raw = str(it.get("image_id", "") or "").strip()
+            canonical_id = image_id_raw
 
-            if not image_id:
+            # Prefer canonical id from filename stem to keep leading zeros.
+            file_stem = ""
+            if isinstance(image_path, str) and image_path:
+                m = re.search(r"(?:^|/)(\d+)\.(?:jpg|jpeg|png)$", image_path, flags=re.IGNORECASE)
+                if m:
+                    file_stem = m.group(1)
+                    canonical_id = file_stem
+
+            if not canonical_id:
                 continue
             if image_path is None and prompt_simple is None:
                 continue
-            out[image_id] = {
+
+            row = {
                 "image_path": str(image_path) if image_path is not None else "",
                 "prompt_simple": str(prompt_simple) if prompt_simple is not None else "",
+                "canonical_image_id": canonical_id,
             }
+
+            def _put(key: str):
+                key = str(key).strip()
+                if not key:
+                    return
+                # keep first occurrence if duplicates exist
+                if key not in out:
+                    out[key] = row
+
+            # Primary key: whatever the merged file carries.
+            _put(image_id_raw or canonical_id)
+            # Canonical id from filename (keeps leading zeros).
+            _put(canonical_id)
+            # Alias: strip leading zeros for numeric ids in rating JSON.
+            if canonical_id.isdigit():
+                _put(str(int(canonical_id)))
     return out
+
+
+def _norm_int_str(s: str) -> str:
+    s = str(s).strip()
+    if not s:
+        return ""
+    if s.isdigit():
+        return str(int(s))
+    return s
 
 
 def _safe_user_id(u) -> str:
@@ -195,12 +229,14 @@ def build():
 
         history_items_info = []
         for idx, image_id in enumerate(history_image_ids):
-            m = merged_map.get(image_id, {})
+            key = str(image_id).strip()
+            m = merged_map.get(key) or merged_map.get(_norm_int_str(key)) or {}
+            canonical_id = (m.get("canonical_image_id") or key).strip()
             caption = (m.get("prompt_simple") or "").strip()
             history_items_info.append(
                 {
-                    "item_name": image_id,
-                    "image_path": _to_rel_history_path(image_id),
+                    "item_name": canonical_id,
+                    "image_path": _to_rel_history_path(canonical_id),
                     "caption": caption,
                     "preference_score": pref_scores[idx] if idx < len(pref_scores) else None,
                     "quality_score": qual_scores[idx] if idx < len(qual_scores) else None,

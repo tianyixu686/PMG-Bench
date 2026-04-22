@@ -31,6 +31,8 @@ PMG-Bench/
 注意：`processed_dataset/*.json` 中的 `image_path` 现在约定为 **相对 data/userpref_v1 的路径**（例如 `images/history/13670.jpg`）。
 运行脚本时会按 `data_root`（即 `data/userpref_v1`）解析成绝对路径，因此你把代码搬到服务器后，只要把图片按上述目录放好即可。
 
+另外：history 的 `image_id`（即 `images/history/{image_id}.jpg` 里的 `{image_id}`）会尽量从 `merged_data_with_simple*.json` 的文件名中提取并**保留前导 0**（例如 `0017713.jpg` -> `0017713`，`0000.jpg` -> `0000`），以便直接匹配你已有的历史图片命名。
+
 ## 关键 JSON schema（约定）
 
 ### `processed_dataset/*.json`（list[dict]）
