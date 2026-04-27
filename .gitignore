@@ -18,6 +18,6 @@ data/userpref_v1/processed_dataset/
 data/userpref_v1/manifests/
 data/userpref_v1/dreambooth/
 data/userpref_v1/images/
-
+logs/
 # Method outputs
 outputs/

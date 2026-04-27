@@ -1,6 +1,0 @@
-{
-  "rating_stage12_json": "path/to/rating_1.json",
-  "bench_add_user_target_images_dir": "path/to/bench_add/user_target_images",
-  "merged_data_with_simple_json": "path/to/benchmark(1)/merged_data_with_simple_1.json",
-  "output_root": "data/userpref_v1"
-}
