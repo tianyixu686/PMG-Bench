@@ -5,6 +5,7 @@ from dataclasses import asdict
 
 import torch
 import torch.nn.functional as F
+import time
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -43,6 +44,7 @@ def run_training(cfg: TrainConfig):
         json.dump(asdict(cfg), f, ensure_ascii=False, indent=2)
 
     seed_all(cfg.seed)
+    t_train_start = time.perf_counter()
 
     try:
         from accelerate import Accelerator
@@ -223,6 +225,7 @@ def run_training(cfg: TrainConfig):
                     progress_bar.set_postfix(loss=float(loss.item()))
 
     accelerator.wait_for_everyone()
+    t_train_end = time.perf_counter()
     if accelerator.is_main_process:
         save_outputs(
             accelerator=accelerator,
@@ -234,6 +237,21 @@ def run_training(cfg: TrainConfig):
             get_peft_model_state_dict=get_peft_model_state_dict,
             StableDiffusionLoraLoaderMixin=StableDiffusionLoraLoaderMixin,
         )
+        # Lightweight training timing summary for efficiency comparisons.
+        try:
+            elapsed_s = float(t_train_end - t_train_start)
+            summary = {
+                "max_train_steps": int(cfg.max_train_steps),
+                "train_batch_size": int(cfg.train_batch_size),
+                "gradient_accumulation_steps": int(cfg.gradient_accumulation_steps),
+                "mixed_precision": str(cfg.mixed_precision),
+                "elapsed_s": elapsed_s,
+                "sec_per_step": (elapsed_s / max(1, int(cfg.max_train_steps))),
+            }
+            with open(os.path.join(cfg.output_dir, "train_metrics.json"), "w", encoding="utf-8") as f:
+                json.dump(summary, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
 
     accelerator.end_training()
 
@@ -271,10 +289,11 @@ def save_outputs(
         text_encoder_lora_layers=text_lora_state,
     )
 
-    with torch.no_grad():
-        te_ = unwrap_model(accelerator, text_encoder)
-        vec = te_.get_input_embeddings().weight[instance_token_id].detach().cpu()
-    torch.save({cfg.instance_token: vec}, os.path.join(out_dir, "learned_token.bin"))
+    if cfg.train_instance_token_embedding:
+        with torch.no_grad():
+            te_ = unwrap_model(accelerator, text_encoder)
+            vec = te_.get_input_embeddings().weight[instance_token_id].detach().cpu()
+        torch.save({cfg.instance_token: vec}, os.path.join(out_dir, "learned_token.bin"))
 
     with open(os.path.join(out_dir, "tokenizer_info.json"), "w", encoding="utf-8") as f:
         json.dump(

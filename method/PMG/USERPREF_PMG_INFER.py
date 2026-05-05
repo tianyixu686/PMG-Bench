@@ -11,6 +11,25 @@ from tqdm import tqdm
 
 os.environ.setdefault("CUDA_LAUNCH_BLOCKING", "1")
 
+def _to_transformers_cache(past_key_values_legacy):
+    """
+    Convert legacy tuple(layer)->(k,v) cache to a transformers Cache object when required.
+    Newer transformers versions expect `past_key_values.get_seq_length()` to exist.
+    """
+    try:
+        from transformers.cache_utils import DynamicCache  # type: ignore
+
+        return DynamicCache.from_legacy_cache(past_key_values_legacy)
+    except Exception:
+        return past_key_values_legacy
+
+def _layer_device(llama_model, layer_idx: int) -> torch.device:
+    layer = llama_model.model.layers[int(layer_idx)]
+    try:
+        return next(layer.parameters()).device
+    except StopIteration:
+        return getattr(llama_model, "device", torch.device("cpu"))
+
 
 def _torch_dtype(name: str) -> torch.dtype:
     name = (name or "").lower()
@@ -216,11 +235,24 @@ def main():
                 [torch.ones((bsz, self.num_prefix_prompt), device=attention_mask.device), attention_mask], dim=1
             )
 
-            num_head = llama_model.model.layers[0].self_attn.num_heads
+            # Transformers compatibility: some versions expose `num_heads`, others only have it in config.
+            num_head = getattr(llama_model.config, "num_attention_heads", None)
+            if num_head is None:
+                num_head = getattr(llama_model.config, "num_heads", None)
+            if num_head is None:
+                num_head = getattr(getattr(llama_model.model.layers[0], "self_attn", object()), "num_heads", None)
+            if num_head is None:
+                raise AttributeError("Cannot resolve number of attention heads from llama_model")
             prefix_tokens = self.prefix_tokens.unsqueeze(0).expand(bsz, -1).to(token.device)
-            past_key_values = self.prefix_encoder(prefix_tokens)
-            past_key_values = past_key_values.view(bsz, self.num_prefix_prompt, self.layer_num, 2, num_head, -1)
-            past_key_values = past_key_values.permute(2, 3, 0, 4, 1, 5)
+            past = self.prefix_encoder(prefix_tokens)
+            # Convert to legacy KV cache format: tuple[layer] of (key, value)
+            past = past.view(bsz, self.num_prefix_prompt, self.layer_num, 2, num_head, -1).permute(2, 3, 0, 4, 1, 5)
+            legacy_list = []
+            for i in range(self.layer_num):
+                dev = _layer_device(llama_model, i)
+                legacy_list.append((past[i, 0].to(dev), past[i, 1].to(dev)))
+            past_key_values_legacy = tuple(legacy_list)
+            past_key_values = _to_transformers_cache(past_key_values_legacy)
 
             outputs = llama_model.model.forward(
                 inputs_embeds=emb,
@@ -231,7 +263,9 @@ def main():
             encoder_hidden_states = [
                 outputs.last_hidden_state[i, token_len[i] : token_len[i] + self.num_image_prompt] for i in range(bsz)
             ]
-            return self.mapping_layer(torch.stack(encoder_hidden_states))
+            encoder_hidden_states = torch.stack(encoder_hidden_states)
+            encoder_hidden_states = encoder_hidden_states.to(self.mapping_layer.weight.device)
+            return self.mapping_layer(encoder_hidden_states)
 
     infer_model = InferenceModel(
         layer_num=len(llama_model.model.layers),
@@ -265,7 +299,17 @@ def main():
         history_text = " ".join(history_captions)
         prompt_text = prompt_preprocess(history_text)
 
-        product_token = llama_tokenizer(prompt_text, return_tensors="pt").input_ids[0].tolist()
+        max_prompt_len = max(1, int(a.max_txt_len) - int(a.num_image_prompt))
+        product_token = (
+            llama_tokenizer(
+                prompt_text,
+                return_tensors="pt",
+                truncation=True,
+                max_length=max_prompt_len,
+            )
+            .input_ids[0]
+            .tolist()
+        )
         token_len = len(product_token)
         product_token += [llama_tokenizer.pad_token_id] * (a.max_txt_len - len(product_token))
         input_ids = torch.tensor(product_token).unsqueeze(0).to(device)

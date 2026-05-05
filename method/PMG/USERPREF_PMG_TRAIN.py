@@ -20,6 +20,25 @@ from diffusers.optimization import get_scheduler
 
 os.environ.setdefault("CUDA_LAUNCH_BLOCKING", "1")
 
+def _to_transformers_cache(past_key_values_legacy):
+    """
+    Convert legacy tuple(layer)->(k,v) cache to a transformers Cache object when required.
+    Newer transformers versions expect `past_key_values.get_seq_length()` to exist.
+    """
+    try:
+        from transformers.cache_utils import DynamicCache  # type: ignore
+
+        return DynamicCache.from_legacy_cache(past_key_values_legacy)
+    except Exception:
+        return past_key_values_legacy
+
+def _layer_device(llama_model, layer_idx: int) -> torch.device:
+    layer = llama_model.model.layers[int(layer_idx)]
+    try:
+        return next(layer.parameters()).device
+    except StopIteration:
+        return getattr(llama_model, "device", torch.device("cpu"))
+
 
 def _torch_dtype(name: str) -> torch.dtype:
     name = (name or "").lower()
@@ -252,7 +271,8 @@ class UserPrefDataset(Dataset):
 
             tokens_list = []
             for cap in batch_captions:
-                tokens = self.sd_pipeline.textEncode(cap, num_tokens=75, return_tokens=True).detach()[0]
+                # SD1.5 / CLIP typical max length = 77
+                tokens = self.sd_pipeline.textEncode(cap, num_tokens=77, return_tokens=True).detach()[0]
                 tokens_list.append(tokens)
 
             embs = self.sd_pipeline.textEncode(tokens=torch.stack(tokens_list, dim=0))
@@ -276,10 +296,23 @@ class UserPrefDataset(Dataset):
         ]
         history_text = " ".join(history_captions)
         prompt_text = prompt_preprocess(history_text)
-        product_token = self.tokenizer(prompt_text, return_tensors="pt").input_ids[0].tolist()
+        # Ensure prompt always fits `max_len` while reserving slots for `num_image_prompt`.
+        # We truncate tokenization instead of asserting/crashing on long histories.
+        max_prompt_len = max(1, int(self.max_len) - int(self.num_image_prompt))
+        product_token = (
+            self.tokenizer(
+                prompt_text,
+                return_tensors="pt",
+                truncation=True,
+                max_length=max_prompt_len,
+            )
+            .input_ids[0]
+            .tolist()
+        )
 
         example: Dict[str, Any] = {}
         example["token_len"] = len(product_token)
+        # After truncation this should always hold, but keep a safe guard.
         assert self.max_len >= len(product_token) + self.num_image_prompt, f"len:{len(product_token)} max_len:{self.max_len}"
         product_token += [self.tokenizer.pad_token_id] * (self.max_len - len(product_token))
         example["input_ids"] = torch.tensor(product_token)
@@ -468,11 +501,28 @@ def main():
                 [torch.ones((bsz, self.num_prefix_prompt), device=attention_mask.device), attention_mask], dim=1
             )
 
-            num_head = llama_model.model.layers[0].self_attn.num_heads
+            # Transformers compatibility: some versions expose `num_heads`, others only have it in config.
+            num_head = getattr(llama_model.config, "num_attention_heads", None)
+            if num_head is None:
+                num_head = getattr(llama_model.config, "num_heads", None)
+            if num_head is None:
+                num_head = getattr(getattr(llama_model.model.layers[0], "self_attn", object()), "num_heads", None)
+            if num_head is None:
+                raise AttributeError("Cannot resolve number of attention heads from llama_model")
             prefix_tokens = self.prefix_tokens.unsqueeze(0).expand(bsz, -1).to(token.device)
-            past_key_values = self.prefix_encoder(prefix_tokens)
-            past_key_values = past_key_values.view(bsz, self.num_prefix_prompt, self.layer_num, 2, num_head, -1)
-            past_key_values = past_key_values.permute(2, 3, 0, 4, 1, 5)
+            past = self.prefix_encoder(prefix_tokens)
+            # `past` is (B, P, L*2*H). Convert to legacy KV cache format:
+            # tuple[layer] of (key, value), each (B, num_heads, P, head_dim).
+            past = past.view(bsz, self.num_prefix_prompt, self.layer_num, 2, num_head, -1).permute(2, 3, 0, 4, 1, 5)
+            # IMPORTANT: when LLaMA is sharded by `device_map="auto"`, each layer can live on a different GPU.
+            # Cache tensors must be placed on the same device as the corresponding layer to avoid device mismatch
+            # during `past_key_values.update(...)`.
+            legacy_list = []
+            for i in range(self.layer_num):
+                dev = _layer_device(llama_model, i)
+                legacy_list.append((past[i, 0].to(dev), past[i, 1].to(dev)))
+            past_key_values_legacy = tuple(legacy_list)
+            past_key_values = _to_transformers_cache(past_key_values_legacy)
 
             outputs = llama_model.model.forward(
                 inputs_embeds=emb,
@@ -484,7 +534,10 @@ def main():
             for i in range(bsz):
                 l = token_len[i].item()
                 encoder_hidden_states.append(outputs.last_hidden_state[i, l : l + self.num_image_prompt])
-            encoder_hidden_states = self.mapping_layer(torch.stack(encoder_hidden_states))
+            encoder_hidden_states = torch.stack(encoder_hidden_states)
+            # If LLaMA is sharded across GPUs, last_hidden_state can live on a different device than mapping_layer.
+            encoder_hidden_states = encoder_hidden_states.to(self.mapping_layer.weight.device)
+            encoder_hidden_states = self.mapping_layer(encoder_hidden_states)
             return encoder_hidden_states
 
     model = InferenceModel(
@@ -539,13 +592,33 @@ def main():
     first_epoch = 0
 
     if args.resume_from:
-        resume_dir = args.resume_from
-        accelerator.print(f"[RESUME] loading state from {resume_dir}")
-        accelerator.load_state(resume_dir)
-        m = re.search(r"epoch(\d+)", resume_dir)
-        if m:
-            first_epoch = int(m.group(1)) + 1
-            accelerator.print(f"[RESUME] resuming from epoch {first_epoch}")
+        resume_from = str(args.resume_from).strip()
+        accelerator.print(f"[RESUME] requested: {resume_from}")
+        resume_path = Path(resume_from)
+        trainer_state_path = resume_path / "trainer_state.json"
+
+        if resume_path.is_file() and resume_path.suffix == ".pth":
+            accelerator.print("[RESUME] Detected .pth weights; loading model weights only (optimizer/scheduler not restored).")
+            state = torch.load(str(resume_path), map_location="cpu")
+            model.load_state_dict(state, strict=True)
+        else:
+            accelerator.print("[RESUME] Detected accelerate checkpoint directory; restoring full training state.")
+            accelerator.load_state(resume_from)
+            if trainer_state_path.exists():
+                try:
+                    with trainer_state_path.open("r", encoding="utf-8") as f:
+                        ts = json.load(f) or {}
+                    global_step = int(ts.get("global_step", 0))
+                    first_epoch = int(ts.get("epoch", 0))
+                    accelerator.print(f"[RESUME] restored epoch={first_epoch}, global_step={global_step}")
+                except Exception as e:
+                    accelerator.print(f"[RESUME] failed to read trainer_state.json: {e}")
+            else:
+                # best-effort fallback: try to infer from directory name
+                m = re.search(r"epoch(\d+)", resume_from)
+                if m:
+                    first_epoch = int(m.group(1))
+                    accelerator.print(f"[RESUME] inferred epoch={first_epoch} from path name")
 
     def log_validation(model, llama_model, sd_pipeline, global_step, batch, with_his_emb=True, with_keyword=True, name=""):
         torch.cuda.empty_cache()
@@ -586,7 +659,7 @@ def main():
     for param in model.parameters():
         param.requires_grad = True
 
-    progress_bar = tqdm(range(max_train_steps), disable=not accelerator.is_local_main_process)
+    progress_bar = tqdm(range(global_step, max_train_steps), disable=not accelerator.is_local_main_process)
     progress_bar.set_description("Steps")
 
     for epoch in range(first_epoch, args.num_train_epochs):
@@ -609,8 +682,24 @@ def main():
                 global_step += 1
 
                 if global_step % args.save_steps == 0:
+                    # 1) Lightweight model-only weights (compatible with USERPREF_PMG_INFER.py)
                     save_path = args.output_dir / f"save-steps-{global_step}.pth"
-                    torch.save(model.state_dict(), str(save_path))
+                    if accelerator.is_main_process:
+                        torch.save(accelerator.unwrap_model(model).state_dict(), str(save_path))
+
+                    # 2) Full training state (optimizer/scheduler/grad scaler/etc) for true resume
+                    ckpt_dir = args.output_dir / f"ckpt-step-{global_step}"
+                    if accelerator.is_main_process:
+                        ckpt_dir.mkdir(parents=True, exist_ok=True)
+                        with (ckpt_dir / "trainer_state.json").open("w", encoding="utf-8") as f:
+                            json.dump(
+                                {"epoch": int(epoch), "global_step": int(global_step)},
+                                f,
+                                ensure_ascii=False,
+                                indent=2,
+                            )
+                    accelerator.wait_for_everyone()
+                    accelerator.save_state(str(ckpt_dir))
 
                 if global_step % args.validation_steps == 1:
                     for vstep, vbatch in enumerate(vaild_dataloader):
@@ -632,7 +721,21 @@ def main():
             accelerator.log(logs, step=global_step)
 
         save_path = args.output_dir / f"model-epoch{epoch}.pth"
-        torch.save(model.state_dict(), str(save_path))
+        if accelerator.is_main_process:
+            torch.save(accelerator.unwrap_model(model).state_dict(), str(save_path))
+        # Epoch-level accelerate checkpoint for robust resume
+        ckpt_dir = args.output_dir / f"ckpt-epoch{epoch}"
+        if accelerator.is_main_process:
+            ckpt_dir.mkdir(parents=True, exist_ok=True)
+            with (ckpt_dir / "trainer_state.json").open("w", encoding="utf-8") as f:
+                json.dump(
+                    {"epoch": int(epoch + 1), "global_step": int(global_step)},
+                    f,
+                    ensure_ascii=False,
+                    indent=2,
+                )
+        accelerator.wait_for_everyone()
+        accelerator.save_state(str(ckpt_dir))
         accelerator.print(f"Completed epoch {epoch+1}/{args.num_train_epochs}; saved: {save_path}")
 
     accelerator.wait_for_everyone()

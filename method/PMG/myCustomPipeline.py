@@ -131,12 +131,20 @@ class SDPipeline(torch.nn.Module):
         embs = prompt_embeds.to(self.weight_dtype)
         batch_size = embs.shape[0]
         if nega_embs is None:
+            # CLIP text encoder has a fixed maximum length (typically 77 for SD1.5).
+            # Our `prompt_embeds` can be longer (e.g., keywords(77)+image_prompt(2)=79),
+            # so we must cap tokenizer length to avoid "sequence length > max_position_embeddings".
+            max_len = int(getattr(getattr(self.text_encoder, "config", None), "max_position_embeddings", 77))
+            max_len = max(1, min(int(embs.shape[1]), int(max_len)))
+            # Align positive/negative sequence length for classifier-free guidance concat.
+            if int(embs.shape[1]) != int(max_len):
+                embs = embs[:, :max_len, :]
             nega_tokens = self.tokenizer([negative_prompt] * batch_size,
                                     return_tensors="pt",
                                     truncation=True,
                                     padding="max_length",
                                     add_special_tokens=True,
-                                    max_length=embs.shape[1]).input_ids.to(embs.device)
+                                    max_length=max_len).input_ids.to(embs.device)
             nega_embs = self.text_encoder(nega_tokens)[0]
         text_embeddings = torch.cat([nega_embs, embs])
         

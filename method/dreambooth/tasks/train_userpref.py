@@ -19,7 +19,7 @@ def parse_args():
     p.add_argument("--per_user_data_root", type=str, default=str(data_root / "dreambooth" / "per_user"))
 
     p.add_argument("--history_policy", type=str, default="topk", choices=["all", "topk", "threshold"])
-    p.add_argument("--history_topk", type=int, default=30)
+    p.add_argument("--history_topk", type=int, default=5)
     p.add_argument("--history_threshold", type=float, default=4.0)
 
     p.add_argument("--resolution", type=int, default=512)
