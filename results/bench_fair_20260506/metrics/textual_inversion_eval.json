@@ -1,0 +1,40 @@
+{
+  "method": "textual_inversion",
+  "dataset": "userpref_v1",
+  "n_samples": 162,
+  "summary": {
+    "clip_i": {
+      "mean": 0.6905442226080247,
+      "std": 0.10496278992701859,
+      "n": 162
+    },
+    "clip_t": {
+      "mean": 0.2708574459876543,
+      "std": 0.04253966440343995,
+      "n": 162
+    },
+    "dino_i": {
+      "mean": 0.3342860137215919,
+      "std": 0.1549907702021815,
+      "n": 162
+    },
+    "lpips_target": {
+      "mean": 0.7791659272747276,
+      "std": 0.05820857281207232,
+      "n": 162
+    },
+    "gram_target": {
+      "mean": 30.353945121720987,
+      "std": 20.472909893252847,
+      "n": 162
+    },
+    "hpsv2": {
+      "mean": 0.2255151065779321,
+      "std": 0.039061208935335844,
+      "n": 162
+    }
+  },
+  "fid_vs_target_distribution": 6.645288467407227,
+  "run_tag": "bench_fair_20260506",
+  "note": "Full per-sample paths omitted; see paper Table 4.x / Fig 4.7-4.8."
+}

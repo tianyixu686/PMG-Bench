@@ -1,0 +1,7 @@
+# Optional deps for run_eval_benchmark.py (--compute_fid, DINO fallback, HPSv2)
+# FID: torchmetrics needs torch-fidelity at runtime.
+torch-fidelity>=0.3.0
+# HPSv2: needs HuggingFace cache for CLIP ViT-H-14 + xswu/HPSv2 (first run downloads).
+hpsv2>=1.2.0
+# timm: only used if torch.hub DINO fails; optional local weights via USERPREF_DINO_CKPT.
+timm>=0.9.0

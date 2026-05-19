@@ -1,0 +1,40 @@
+{
+  "method": "dreambooth",
+  "dataset": "userpref_v1",
+  "n_samples": 162,
+  "summary": {
+    "clip_i": {
+      "mean": 0.7458074122299383,
+      "std": 0.10042552034672664,
+      "n": 162
+    },
+    "clip_t": {
+      "mean": 0.3047078450520833,
+      "std": 0.02976677347971706,
+      "n": 162
+    },
+    "dino_i": {
+      "mean": 0.42210686471267245,
+      "std": 0.1553214149320248,
+      "n": 162
+    },
+    "lpips_target": {
+      "mean": 0.7789352422143206,
+      "std": 0.06157267569726233,
+      "n": 162
+    },
+    "gram_target": {
+      "mean": 23.51781090983638,
+      "std": 14.751146364424223,
+      "n": 162
+    },
+    "hpsv2": {
+      "mean": 0.2530705958236883,
+      "std": 0.036189581236292415,
+      "n": 162
+    }
+  },
+  "fid_vs_target_distribution": 2.782140016555786,
+  "run_tag": "bench_fair_20260506",
+  "note": "Full per-sample paths omitted; see paper Table 4.x / Fig 4.7-4.8."
+}

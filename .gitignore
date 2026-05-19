@@ -1,8 +1,7 @@
-# Python bytecode
+# Python
 __pycache__/
 *.py[cod]
-
-# Tool caches
+*.egg-info/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
@@ -11,14 +10,22 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Userpref benchmark (do not commit local paths or generated artifacts)
+# Local secrets / machine paths
 data/userpref_v1/sources.json
 data/userpref_v1/splits.json
+
+# Full dataset (build locally; see data/userpref_v1/README.md)
 data/userpref_v1/processed_dataset/
-data/userpref_v1/manifests/
+data/userpref_v1/manifests/*.jsonl
+!data/userpref_v1/manifests/stage2_queries.sample.jsonl
 data/userpref_v1/dreambooth/
 data/userpref_v1/images/
 data/userpref_v1/textual_inversion/
-logs/
-# Method outputs
+
+# Training & inference artifacts (summaries live under results/)
 outputs/
+logs/
+
+# Slurm / cluster temp lists (optional local only)
+scripts/ti_remaining_users_*.txt
+DELETION_CANDIDATES.txt

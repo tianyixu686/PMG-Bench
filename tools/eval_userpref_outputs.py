@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -114,19 +115,74 @@ def clip_text_feature(clip_model, text: str, device: torch.device) -> torch.Tens
 
 
 def build_dino(device: torch.device):
+    """
+    DINO ViT-B/16 image embedding for cosine similarity (DINO-I).
+
+    Order:
+      1) timm `vit_base_patch16_224.dino` — respects HF_ENDPOINT (e.g. https://hf-mirror.com) for weights.
+      2) torch.hub facebookresearch/dino — needs GitHub zip + dl.fbaipublicfiles.com (can be slow/blocked).
+      3) timm + USERPREF_DINO_CKPT — fully offline if you have a local checkpoint file.
+    """
+    timm_err: Optional[str] = None
+
+    # --- 1) timm + Hugging Face (mirror-friendly) ---
     try:
         import timm
         from timm.data import resolve_data_config
         from timm.data.transforms_factory import create_transform
-    except Exception:
-        return None, None
+    except Exception as e:
+        timm_err = f"timm import: {type(e).__name__}: {e}"
+    else:
+        ckpt = os.environ.get("USERPREF_DINO_CKPT", "").strip()
+        try:
+            if ckpt and Path(ckpt).is_file():
+                model = timm.create_model(
+                    "vit_base_patch16_224.dino",
+                    pretrained=False,
+                    num_classes=0,
+                    global_pool="avg",
+                    checkpoint_path=ckpt,
+                )
+            else:
+                os.environ.setdefault("HF_HUB_ETAG_TIMEOUT", "60")
+                os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "300")
+                model = timm.create_model("vit_base_patch16_224.dino", pretrained=True, num_classes=0, global_pool="avg")
+            model.eval().to(device)
+            cfg = resolve_data_config({}, model=model)
+            tfm = create_transform(**cfg, is_training=False)
+            return model, tfm
+        except Exception as e:
+            timm_err = f"timm load: {type(e).__name__}: {e}"
 
-    # Widely used self-supervised DINO ViT from timm; outputs a pooled feature with num_classes=0.
-    model = timm.create_model("vit_base_patch16_224.dino", pretrained=True, num_classes=0, global_pool="avg")
-    model.eval().to(device)
-    cfg = resolve_data_config({}, model=model)
-    tfm = create_transform(**cfg, is_training=False)
-    return model, tfm
+    # --- 2) torch.hub Facebook DINO ---
+    try:
+        import torchvision.transforms as T
+
+        model = torch.hub.load(
+            "facebookresearch/dino:main",
+            "dino_vitb16",
+            pretrained=True,
+            trust_repo=True,
+        )
+        model.eval().to(device)
+        tfm = T.Compose(
+            [
+                T.Resize(256, interpolation=T.InterpolationMode.BICUBIC),
+                T.CenterCrop(224),
+                T.ToTensor(),
+                T.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+            ]
+        )
+        return model, tfm
+    except Exception as hub_e:
+        hub_msg = f"{type(hub_e).__name__}: {hub_e}"
+
+    print(
+        "Warning: DINO unavailable. "
+        f"timm branch: {timm_err}; torch.hub: {hub_msg}. "
+        "Use HF_ENDPOINT mirror for timm, or set USERPREF_DINO_CKPT, or pre-populate torch hub cache."
+    )
+    return None, None
 
 
 @torch.no_grad()
@@ -148,14 +204,36 @@ def build_ssim(device: torch.device):
         return None
 
 
+def _ensure_hpsv2_open_clip_bpe() -> None:
+    """PyPI wheel for hpsv2 often omits open_clip BPE vocab; reuse OpenAI clip package file."""
+    try:
+        import clip  # type: ignore
+        import hpsv2  # type: ignore
+
+        dst_dir = Path(hpsv2.__file__).resolve().parent / "src" / "open_clip"
+        dst = dst_dir / "bpe_simple_vocab_16e6.txt.gz"
+        if dst.is_file():
+            return
+        src = Path(clip.__file__).resolve().parent / "bpe_simple_vocab_16e6.txt.gz"
+        if not src.is_file():
+            return
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)
+    except Exception:
+        pass
+
+
 def build_hpsv2():
     try:
         import hpsv2  # type: ignore
 
+        _ensure_hpsv2_open_clip_bpe()
         return hpsv2
     except Exception:
         try:
             from hpsv2 import HPSv2  # type: ignore
+
+            _ensure_hpsv2_open_clip_bpe()
 
             # normalize to an object exposing .score(img_path, prompt, hps_version="v2.1")
             class _Wrapper:
@@ -180,7 +258,10 @@ def _hpsv2_score(hpsv2_model, image_path: str, prompt: str) -> Optional[float]:
         if hasattr(out, "item"):
             return float(out.item())
         return float(out)
-    except Exception:
+    except Exception as e:
+        if not getattr(_hpsv2_score, "_warned", False):
+            setattr(_hpsv2_score, "_warned", True)
+            print(f"Warning: HPSv2 scoring failed ({type(e).__name__}: {e}); further HPSv2 errors suppressed.")
         return None
 
 

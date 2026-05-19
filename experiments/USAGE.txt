@@ -1,0 +1,49 @@
+目录说明（均在 PMG-Bench 仓库根目录下执行）
+
+experiments/
+  common/                    # 共用：路径解析、CLIP 向量、VGG Gram、读 userpref JSON
+  exp1_dataset_analysis/     # 实验一：统计 + 目标图 CLIP 空间热力图 + KMeans 簇覆盖度
+  exp3_bench_metrics/        # 实验三主评测：多维指标 JSON
+  exp3_metric_conflict/      # 指标冲突：Spearman、冲突样本、分簇冲突率
+
+依赖（与仓库其余评测脚本类似）: torch, torchvision, numpy, matplotlib, tqdm, pillow,
+  sklearn (KMeans/PCA), pandas; 可选 umap-learn, openai-clip, timm, lpips, torchmetrics (FID), hpsv2
+
+命令示例
+----------
+# 仅生成论文图 4-1（全库 history+stage2 合并的三维分布直方图，不跑 CLIP）
+python -m experiments.exp1_dataset_analysis.plot_fig4_1_only \
+  --out_dir outputs/experiments/fig4_1_overall_scores
+# 若本机已装 Noto CJK 等字体可加 --chinese_labels
+
+# 实验一（dataset_report.json：样本定义、用户/图像计数、用户画像、阶段2三维与 history 二维分布等）
+python -m experiments.exp1_dataset_analysis.run_exp1 \
+  --split_json data/userpref_v1/processed_dataset/test.json \
+  --out_dir outputs/experiments/exp1_dataset_analysis/run01 \
+  --n_clusters 12
+
+# 合并 train+val+test 做全库计数（用户数、去重图像数等）
+python -m experiments.exp1_dataset_analysis.run_exp1 \
+  --split_json data/userpref_v1/processed_dataset/test.json \
+  --out_dir outputs/experiments/exp1_dataset_analysis/run01_full \
+  --include_all_splits
+
+# 可选：非线性 2D（需 pip install umap-learn）
+python -m experiments.exp1_dataset_analysis.run_exp1 --use_umap ...
+
+# 实验三：多维指标（输入为 IP-Adapter 的 generation_results.json 或 sample_XXXX 目录）
+python -m experiments.exp3_bench_metrics.run_eval_benchmark \
+  --test_json data/userpref_v1/processed_dataset/test.json \
+  --input outputs/userpref_v1_ip_adapter/userpref_ip_adapter_exp1/generation_results.json \
+  --output_json outputs/experiments/exp3_bench_metrics/ip_adapter_eval.json
+
+python -m experiments.exp3_bench_metrics.run_eval_benchmark \
+  --input path/to/exp_dir \
+  --output_json outputs/experiments/exp3_bench_metrics/dir_eval.json \
+  --compute_hps --compute_fid
+
+# 指标冲突（先跑实验一得到 sample_table.json，再与 benchmark JSON 对齐 sample_idx）
+python -m experiments.exp3_metric_conflict.run_conflict_analysis \
+  --benchmark_json outputs/experiments/exp3_bench_metrics/ip_adapter_eval.json \
+  --cluster_table outputs/experiments/exp1_dataset_analysis/run01/sample_table.json \
+  --out_dir outputs/experiments/exp3_metric_conflict/run01

@@ -1,0 +1,442 @@
+[
+  {
+    "worker_id": "2",
+    "history_items_info": [
+      {
+        "item_name": "0013670",
+        "image_path": "images/history/0013670.jpg",
+        "caption": "Two contrasting lines form a neural network of brains in wireframe, with one large eye in the sky, creating a symmetrical dot.",
+        "preference_score": 4,
+        "quality_score": 3
+      },
+      {
+        "item_name": "0013100",
+        "image_path": "images/history/0013100.jpg",
+        "caption": "A 26-year-old woman with long curly hair and a long neck, posing with her dog, surrounded by flowers.",
+        "preference_score": 4,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0011715",
+        "image_path": "images/history/0011715.jpg",
+        "caption": "A Alocasia Maharani plant in a simple, soft-colored design",
+        "preference_score": 4,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0004096",
+        "image_path": "images/history/0004096.jpg",
+        "caption": "Cherry blossoms on a sage green background.",
+        "preference_score": 5,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0013921",
+        "image_path": "images/history/0013921.jpg",
+        "caption": "A male fashion model wearing a vaporwave Pierre Carden shirt.",
+        "preference_score": 5,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0013510",
+        "image_path": "images/history/0013510.jpg",
+        "caption": "A beautiful elegant cat in portrait style.",
+        "preference_score": 4,
+        "quality_score": 4
+      },
+      {
+        "item_name": "0013953",
+        "image_path": "images/history/0013953.jpg",
+        "caption": "A screenshot from a 1987 Pretty Cure fantasy movie",
+        "preference_score": 3,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0015832",
+        "image_path": "images/history/0015832.jpg",
+        "caption": "一个亡灵节马蒂罗什卡娃娃的黑白线稿",
+        "preference_score": 4,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0006409",
+        "image_path": "images/history/0006409.jpg",
+        "caption": "Simplified: A garden with skulls and bones",
+        "preference_score": 4,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0009100",
+        "image_path": "images/history/0009100.jpg",
+        "caption": "Side view platform game tiles on white background.",
+        "preference_score": 3,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0011654",
+        "image_path": "images/history/0011654.jpg",
+        "caption": "Simplified: A pyramid's architectural blueprint and design plans",
+        "preference_score": 4,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0018659",
+        "image_path": "images/history/0018659.jpg",
+        "caption": "A woman dancing with a colorful hat and large glasses.",
+        "preference_score": 2,
+        "quality_score": 3
+      },
+      {
+        "item_name": "0009613",
+        "image_path": "images/history/0009613.jpg",
+        "caption": "A detailed photo of a perfectly symmetrical love mandala with vibrant rainbow colors on a black background.",
+        "preference_score": 4,
+        "quality_score": 4
+      },
+      {
+        "item_name": "0010914",
+        "image_path": "images/history/0010914.jpg",
+        "caption": "A 26-year-old woman with long curly hair and a long neck, posing with her dog, surrounded by flowers.",
+        "preference_score": 4,
+        "quality_score": 4
+      },
+      {
+        "item_name": "0017941",
+        "image_path": "images/history/0017941.jpg",
+        "caption": "Hayley Westenra in a detailed and intricate gown.",
+        "preference_score": 2,
+        "quality_score": 3
+      },
+      {
+        "item_name": "0016200",
+        "image_path": "images/history/0016200.jpg",
+        "caption": "A kraken rises from the ocean and attacks a ship with its tentacles.",
+        "preference_score": 2,
+        "quality_score": 3
+      },
+      {
+        "item_name": "0014746",
+        "image_path": "images/history/0014746.jpg",
+        "caption": "A Cavapoo dog.",
+        "preference_score": 2,
+        "quality_score": 2
+      },
+      {
+        "item_name": "0009188",
+        "image_path": "images/history/0009188.jpg",
+        "caption": "Primitive drawings of satanic runes with bunnies",
+        "preference_score": 4,
+        "quality_score": 4
+      },
+      {
+        "item_name": "0009924",
+        "image_path": "images/history/0009924.jpg",
+        "caption": "Tom Cruise playing a bartender in an 80s action figure set",
+        "preference_score": 3,
+        "quality_score": 4
+      },
+      {
+        "item_name": "0013934",
+        "image_path": "images/history/0013934.jpg",
+        "caption": "San Francisco 49ers logo in red and gold",
+        "preference_score": 4,
+        "quality_score": 4
+      },
+      {
+        "item_name": "0012083",
+        "image_path": "images/history/0012083.jpg",
+        "caption": "A black and white mandala with thick lines, simple outline, for kids to color.",
+        "preference_score": 4,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0008123",
+        "image_path": "images/history/0008123.jpg",
+        "caption": "Two kittens playing on a patterned rug.",
+        "preference_score": 2,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0005553",
+        "image_path": "images/history/0005553.jpg",
+        "caption": "A black cat among many white cats in a surreal scene.",
+        "preference_score": 2,
+        "quality_score": 3
+      }
+    ],
+    "target_item_info": {
+      "item_name": "2_positive_A_A.png",
+      "image_path": "images/stage2/2/2_positive_A_A.png",
+      "caption": "Sauron was defeated.",
+      "caption_cn": "萨鲁曼被击败了。",
+      "query_variant": "A"
+    },
+    "stage2_candidates": [
+      {
+        "image_name": "2_negative_A_A.png",
+        "image_path": "images/stage2/2/2_negative_A_A.png",
+        "prompt": "Sauron was defeated., (vintage:1.64), sharp detail (1.25), 1966 contemporary art、retro、vintage (1.58)",
+        "initial_rank": 4,
+        "quality_score": 5,
+        "preference_score": 4,
+        "task_match_score": 3
+      },
+      {
+        "image_name": "2_negative_B_A.png",
+        "image_path": "images/stage2/2/2_negative_B_A.png",
+        "prompt": "Sauron was defeated., bold style (1.25), bold lineart、bold lines (1.25)",
+        "initial_rank": 2,
+        "quality_score": 4,
+        "preference_score": 2,
+        "task_match_score": 2
+      },
+      {
+        "image_name": "2_positive_A_A.png",
+        "image_path": "images/stage2/2/2_positive_A_A.png",
+        "prompt": "Sauron was defeated., fashion、simple design、black white、refined (1.25), editorial vogue photography、line art、minimalistic、no shading、white background、black and white、black and white coloring page、black background、pure black and white only、beautiful、elegant (1.25)",
+        "initial_rank": 5,
+        "quality_score": 4,
+        "preference_score": 5,
+        "task_match_score": 3
+      },
+      {
+        "image_name": "2_random_1_A.png",
+        "image_path": "images/stage2/2/2_random_1_A.png",
+        "prompt": "Sauron was defeated., (Art_Nouveau_Modern:1.60), (photography:1.68), (retro:1.69), (Rembrandt lighting:1.64), (dark:1.55), (hypermaximalist:1.53)",
+        "initial_rank": 3,
+        "quality_score": 5,
+        "preference_score": 4,
+        "task_match_score": 3
+      },
+      {
+        "image_name": "2_random_2_A.png",
+        "image_path": "images/stage2/2/2_random_2_A.png",
+        "prompt": "Sauron was defeated., (Symbolism:1.50), (concept art:1.68), (oriental:1.53), (backlight:1.68), (vibrant colors:1.55), (whimsical:1.59)",
+        "initial_rank": 1,
+        "quality_score": 5,
+        "preference_score": 1,
+        "task_match_score": 3
+      }
+    ]
+  },
+  {
+    "worker_id": "2",
+    "history_items_info": [
+      {
+        "item_name": "0013670",
+        "image_path": "images/history/0013670.jpg",
+        "caption": "Two contrasting lines form a neural network of brains in wireframe, with one large eye in the sky, creating a symmetrical dot.",
+        "preference_score": 4,
+        "quality_score": 3
+      },
+      {
+        "item_name": "0013100",
+        "image_path": "images/history/0013100.jpg",
+        "caption": "A 26-year-old woman with long curly hair and a long neck, posing with her dog, surrounded by flowers.",
+        "preference_score": 4,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0011715",
+        "image_path": "images/history/0011715.jpg",
+        "caption": "A Alocasia Maharani plant in a simple, soft-colored design",
+        "preference_score": 4,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0004096",
+        "image_path": "images/history/0004096.jpg",
+        "caption": "Cherry blossoms on a sage green background.",
+        "preference_score": 5,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0013921",
+        "image_path": "images/history/0013921.jpg",
+        "caption": "A male fashion model wearing a vaporwave Pierre Carden shirt.",
+        "preference_score": 5,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0013510",
+        "image_path": "images/history/0013510.jpg",
+        "caption": "A beautiful elegant cat in portrait style.",
+        "preference_score": 4,
+        "quality_score": 4
+      },
+      {
+        "item_name": "0013953",
+        "image_path": "images/history/0013953.jpg",
+        "caption": "A screenshot from a 1987 Pretty Cure fantasy movie",
+        "preference_score": 3,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0015832",
+        "image_path": "images/history/0015832.jpg",
+        "caption": "一个亡灵节马蒂罗什卡娃娃的黑白线稿",
+        "preference_score": 4,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0006409",
+        "image_path": "images/history/0006409.jpg",
+        "caption": "Simplified: A garden with skulls and bones",
+        "preference_score": 4,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0009100",
+        "image_path": "images/history/0009100.jpg",
+        "caption": "Side view platform game tiles on white background.",
+        "preference_score": 3,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0011654",
+        "image_path": "images/history/0011654.jpg",
+        "caption": "Simplified: A pyramid's architectural blueprint and design plans",
+        "preference_score": 4,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0018659",
+        "image_path": "images/history/0018659.jpg",
+        "caption": "A woman dancing with a colorful hat and large glasses.",
+        "preference_score": 2,
+        "quality_score": 3
+      },
+      {
+        "item_name": "0009613",
+        "image_path": "images/history/0009613.jpg",
+        "caption": "A detailed photo of a perfectly symmetrical love mandala with vibrant rainbow colors on a black background.",
+        "preference_score": 4,
+        "quality_score": 4
+      },
+      {
+        "item_name": "0010914",
+        "image_path": "images/history/0010914.jpg",
+        "caption": "A 26-year-old woman with long curly hair and a long neck, posing with her dog, surrounded by flowers.",
+        "preference_score": 4,
+        "quality_score": 4
+      },
+      {
+        "item_name": "0017941",
+        "image_path": "images/history/0017941.jpg",
+        "caption": "Hayley Westenra in a detailed and intricate gown.",
+        "preference_score": 2,
+        "quality_score": 3
+      },
+      {
+        "item_name": "0016200",
+        "image_path": "images/history/0016200.jpg",
+        "caption": "A kraken rises from the ocean and attacks a ship with its tentacles.",
+        "preference_score": 2,
+        "quality_score": 3
+      },
+      {
+        "item_name": "0014746",
+        "image_path": "images/history/0014746.jpg",
+        "caption": "A Cavapoo dog.",
+        "preference_score": 2,
+        "quality_score": 2
+      },
+      {
+        "item_name": "0009188",
+        "image_path": "images/history/0009188.jpg",
+        "caption": "Primitive drawings of satanic runes with bunnies",
+        "preference_score": 4,
+        "quality_score": 4
+      },
+      {
+        "item_name": "0009924",
+        "image_path": "images/history/0009924.jpg",
+        "caption": "Tom Cruise playing a bartender in an 80s action figure set",
+        "preference_score": 3,
+        "quality_score": 4
+      },
+      {
+        "item_name": "0013934",
+        "image_path": "images/history/0013934.jpg",
+        "caption": "San Francisco 49ers logo in red and gold",
+        "preference_score": 4,
+        "quality_score": 4
+      },
+      {
+        "item_name": "0012083",
+        "image_path": "images/history/0012083.jpg",
+        "caption": "A black and white mandala with thick lines, simple outline, for kids to color.",
+        "preference_score": 4,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0008123",
+        "image_path": "images/history/0008123.jpg",
+        "caption": "Two kittens playing on a patterned rug.",
+        "preference_score": 2,
+        "quality_score": 5
+      },
+      {
+        "item_name": "0005553",
+        "image_path": "images/history/0005553.jpg",
+        "caption": "A black cat among many white cats in a surreal scene.",
+        "preference_score": 2,
+        "quality_score": 3
+      }
+    ],
+    "target_item_info": {
+      "item_name": "2_random_1_B.png",
+      "image_path": "images/stage2/2/2_random_1_B.png",
+      "caption": "Feathers, lace, filigree, pearls",
+      "caption_cn": "羽毛、蕾丝、镂空、珍珠",
+      "query_variant": "B"
+    },
+    "stage2_candidates": [
+      {
+        "image_name": "2_negative_A_B.png",
+        "image_path": "images/stage2/2/2_negative_A_B.png",
+        "prompt": "Feathers, lace, filigree, pearls, (vintage:1.63), sharp detail (1.25), retro、vintage (1.62)",
+        "initial_rank": 1,
+        "quality_score": 5,
+        "preference_score": 1,
+        "task_match_score": 3
+      },
+      {
+        "image_name": "2_negative_B_B.png",
+        "image_path": "images/stage2/2/2_negative_B_B.png",
+        "prompt": "Feathers, lace, filigree, pearls, bold style (1.25), bold lineart、bold lines (1.25)",
+        "initial_rank": 2,
+        "quality_score": 5,
+        "preference_score": 2,
+        "task_match_score": 2
+      },
+      {
+        "image_name": "2_positive_A_B.png",
+        "image_path": "images/stage2/2/2_positive_A_B.png",
+        "prompt": "Feathers, lace, filigree, pearls, fashion、simple design、black white、refined (1.25), editorial vogue photography、line art、minimalistic、no shading、white background、black and white、black and white coloring page、black background、pure black and white only、beautiful、elegant (1.25)",
+        "initial_rank": 4,
+        "quality_score": 5,
+        "preference_score": 4,
+        "task_match_score": 2
+      },
+      {
+        "image_name": "2_random_1_B.png",
+        "image_path": "images/stage2/2/2_random_1_B.png",
+        "prompt": "Feathers, lace, filigree, pearls, (Contemporary_Realism:1.51), (collage:1.52), (oriental:1.70), (glowing:1.57), (tonal colors:1.69), (flat:1.62)",
+        "initial_rank": 5,
+        "quality_score": 4,
+        "preference_score": 5,
+        "task_match_score": 3
+      },
+      {
+        "image_name": "2_random_2_B.png",
+        "image_path": "images/stage2/2/2_random_2_B.png",
+        "prompt": "Feathers, lace, filigree, pearls, (Pointillism:1.53), (vector:1.60), (vintage:1.55), (dramatic lighting:1.57), (monochrome:1.66), (ornate:1.50)",
+        "initial_rank": 3,
+        "quality_score": 4,
+        "preference_score": 3,
+        "task_match_score": 3
+      }
+    ]
+  }
+]
