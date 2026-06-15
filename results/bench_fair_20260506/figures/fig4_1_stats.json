@@ -61,9 +61,9 @@
     "p90": 4.0
   },
   "figures": [
-    "/data-nfs/gpu2/u18871384022/PMG-Bench/outputs/experiments/fig4_1_overall_scores/fig4_1_quality_score.png",
-    "/data-nfs/gpu2/u18871384022/PMG-Bench/outputs/experiments/fig4_1_overall_scores/fig4_1_task_match_score.png",
-    "/data-nfs/gpu2/u18871384022/PMG-Bench/outputs/experiments/fig4_1_overall_scores/fig4_1_aesthetic_preference_score.png",
-    "/data-nfs/gpu2/u18871384022/PMG-Bench/outputs/experiments/fig4_1_overall_scores/fig4_1_three_scores_combined.png"
+    "outputs/experiments/fig4_1_overall_scores/fig4_1_quality_score.png",
+    "outputs/experiments/fig4_1_overall_scores/fig4_1_task_match_score.png",
+    "outputs/experiments/fig4_1_overall_scores/fig4_1_aesthetic_preference_score.png",
+    "outputs/experiments/fig4_1_overall_scores/fig4_1_three_scores_combined.png"
   ]
 }

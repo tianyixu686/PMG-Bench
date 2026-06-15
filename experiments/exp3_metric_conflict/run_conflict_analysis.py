@@ -42,6 +42,13 @@ try:
 except ImportError as e:
     raise SystemExit("Please install pandas: pip install pandas") from e
 
+from experiments.common.plot_locale import metric_axis_label, setup_matplotlib_chinese
+
+_CLIP_LABEL_ZH = {
+    "clip_i": "CLIP-I（相对目标图，越高越好）",
+    "clip_t": "CLIP-T（相对 caption，越高越好）",
+}
+
 
 def load_json(path: Path) -> Any:
     with path.open("r", encoding="utf-8") as f:
@@ -124,6 +131,7 @@ def main():
 
     out_dir = Path(args.out_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
+    setup_matplotlib_chinese()
 
     if len(paths) == 1:
         obj = load_json(paths[0])
@@ -143,9 +151,11 @@ def main():
     plt.figure(figsize=(max(6, 0.9 * len(corr_cols)), max(5, 0.85 * len(corr_cols))))
     im = plt.imshow(corr.values, cmap="RdBu_r", vmin=-1, vmax=1)
     plt.colorbar(im, fraction=0.046, pad=0.04)
-    plt.xticks(range(len(corr.columns)), corr.columns, rotation=45, ha="right")
-    plt.yticks(range(len(corr.index)), corr.index)
-    plt.title("Spearman correlation (auto metrics)")
+    tick_labels = [metric_axis_label(str(c)) for c in corr.columns]
+    ytick_labels = [metric_axis_label(str(i)) for i in corr.index]
+    plt.xticks(range(len(corr.columns)), tick_labels, rotation=45, ha="right")
+    plt.yticks(range(len(corr.index)), ytick_labels)
+    plt.title("Spearman 相关系数（自动评测指标）")
     plt.tight_layout()
     plt.savefig(out_dir / "spearman_correlation.png", dpi=160)
     plt.close()
@@ -194,9 +204,9 @@ def main():
 
                 plt.figure(figsize=(max(8, per_cluster["cluster_id"].nunique() * 0.4), 4))
                 plt.bar(per_cluster["cluster_id"].astype(str), per_cluster["conflict_rate"], color="coral")
-                plt.xlabel("cluster_id")
-                plt.ylabel("conflict rate")
-                plt.title(f"{clip_col}↑ & LPIPS↑ conflict rate by style cluster")
+                plt.xlabel("风格簇 ID")
+                plt.ylabel("冲突率")
+                plt.title(f"{metric_axis_label(clip_col)} 高且 LPIPS 高：各风格簇冲突率")
                 plt.tight_layout()
                 plt.savefig(out_dir / "conflict_rate_by_cluster.png", dpi=150)
                 plt.close()
@@ -212,7 +222,7 @@ def main():
             s=16,
             alpha=0.45,
             c="gray",
-            label="other",
+            label="其他样本",
         )
         plt.scatter(
             mdf.loc[ok & conflict, clip_col],
@@ -220,17 +230,14 @@ def main():
             s=28,
             alpha=0.85,
             c="red",
-            label="conflict",
+            label="冲突样本",
         )
         plt.axvline(c_thr, color="k", ls="--", lw=0.8, alpha=0.5)
         plt.axhline(l_thr, color="k", ls="--", lw=0.8, alpha=0.5)
-        if clip_col == "clip_t":
-            plt.xlabel("CLIP-T (higher → better text alignment)")
-        else:
-            plt.xlabel("CLIP-I vs target (higher → better image alignment)")
-        plt.ylabel("LPIPS vs target (higher → less similar)")
+        plt.xlabel(_CLIP_LABEL_ZH.get(clip_col, metric_axis_label(clip_col)))
+        plt.ylabel("相对目标图的 LPIPS（越高越不相似）")
         plt.legend(loc="upper left")
-        plt.title("Metric conflict region (top-right)")
+        plt.title("指标冲突区域（右上象限）")
         plt.tight_layout()
         plt.savefig(out_dir / "scatter_clip_vs_lpips.png", dpi=150)
         plt.close()

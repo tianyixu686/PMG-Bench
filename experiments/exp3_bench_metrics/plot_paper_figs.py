@@ -113,17 +113,12 @@ def _write_md_table(path: Path, rows: List[Tuple[str, str, str]]):
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-_METHOD_DISPLAY = {
-    "ip_adapter": "IP-Adapter",
-    "pmg": "PMG",
-    "textual_inversion": "Textual Inversion",
-    "dreambooth": "DreamBooth",
-    "custom_diffusion": "Custom Diffusion",
-}
-
-
-def _method_label(key: str) -> str:
-    return _METHOD_DISPLAY.get(key, key)
+from experiments.common.plot_locale import (
+    cjk_font_properties,
+    method_label as _method_label,
+    metric_axis_label,
+    setup_matplotlib_chinese,
+)
 
 
 def plot_scatter_dino_lpips(
@@ -132,6 +127,7 @@ def plot_scatter_dino_lpips(
 ):
     import matplotlib.pyplot as plt
 
+    setup_matplotlib_chinese()
     plt.rcParams.update({"font.size": 11})
     fig, ax = plt.subplots(figsize=(8.5, 6.2))
     colors = plt.cm.tab10(np.linspace(0, 1, max(3, len(series))))
@@ -148,19 +144,15 @@ def plot_scatter_dino_lpips(
             edgecolors="white",
             linewidths=0.4,
         )
-    ax.set_xlabel("DINO-I (cosine similarity to target, higher is better)", fontsize=12)
-    ax.set_ylabel("LPIPS to target (lower is better)", fontsize=12)
-    ax.set_title(
-        "Per-user mean DINO-I vs LPIPS (trade-off between semantic and perceptual match)",
-        fontsize=12,
-    )
+    ax.set_xlabel("DINO-I（与目标图余弦相似度，越高越好）", fontsize=12)
+    ax.set_ylabel("相对目标图的 LPIPS（越低越好）", fontsize=12)
+    ax.set_title("各用户均值：DINO-I 与 LPIPS（语义 vs 感知匹配）", fontsize=12)
     ax.legend(loc="best", fontsize=10, framealpha=0.92)
     ax.grid(True, alpha=0.35)
-    # Ideal region: high DINO (right), low LPIPS (bottom) → lower-right
     ax.text(
         0.02,
         0.98,
-        "Ideal: lower-right\n(high DINO-I, low LPIPS)",
+        "理想区域：右下方\n（高 DINO-I，低 LPIPS）",
         transform=ax.transAxes,
         fontsize=9,
         verticalalignment="top",
@@ -171,14 +163,6 @@ def plot_scatter_dino_lpips(
     plt.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close()
 
-
-_RADAR_AXIS_LABEL = {
-    "clip_t": "CLIP-T",
-    "dino_i": "DINO-I",
-    "lpips_target": "LPIPS↓",
-    "gram_target": "Gram↓",
-    "hpsv2": "HPS v2",
-}
 
 # 若某方法在多数轴上归一化后接近 0，极坐标上会塌成「一根线」；对半径做线性抬底，不改变各方法在每条轴上的排序。
 _RADAR_RADIUS_FLOOR = 0.22
@@ -194,7 +178,8 @@ def _radar_radius_for_plot(r: float) -> float:
 def plot_radar(norm: Dict[str, Dict[str, float]], axes_order: List[str], out_path: Path):
     import matplotlib.pyplot as plt
 
-    labels = [_RADAR_AXIS_LABEL.get(k, k) for k in axes_order]
+    setup_matplotlib_chinese()
+    labels = [metric_axis_label(k) for k in axes_order]
     n = len(labels)
     angles = np.linspace(0, 2 * np.pi, n, endpoint=False).tolist()
     angles += angles[:1]
@@ -209,8 +194,8 @@ def plot_radar(norm: Dict[str, Dict[str, float]], axes_order: List[str], out_pat
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels, size=10)
     ax.set_title(
-        "Multi-metric radar (min–max across methods; LPIPS/Gram inverted; "
-        f"radius shown as [{_RADAR_RADIUS_FLOOR:.2f},1] linear map for legibility)",
+        f"多指标雷达图（方法间 min–max；LPIPS/Gram 已反向；"
+        f"半径线性映射至 [{_RADAR_RADIUS_FLOOR:.2f}, 1]）",
         fontsize=10,
         pad=16,
     )
@@ -281,17 +266,17 @@ def _plot_history_bars_on_ax(ax, sample: dict, *, title: str = "", legend: bool 
     """单面板：历史每条 preference / quality 并列柱。"""
     prefs, quals, _ = _history_series(sample)
     if not prefs:
-        ax.text(0.5, 0.5, "no history", ha="center", va="center", transform=ax.transAxes, fontsize=11)
+        ax.text(0.5, 0.5, "无历史记录", ha="center", va="center", transform=ax.transAxes, fontsize=11)
         ax.set_axis_off()
         return
     n = len(prefs)
     x = np.arange(n)
-    ax.bar(x - 0.18, prefs, width=0.36, color="steelblue", alpha=0.88, label="preference")
-    ax.bar(x + 0.18, quals, width=0.36, color="darkorange", alpha=0.78, label="quality")
+    ax.bar(x - 0.18, prefs, width=0.36, color="steelblue", alpha=0.88, label="偏好分")
+    ax.bar(x + 0.18, quals, width=0.36, color="darkorange", alpha=0.78, label="质量分")
     ax.set_ylim(0.5, 5.5)
     ax.set_xlim(-0.6, n - 0.4)
     ax.set_xticks([])
-    ax.set_ylabel("score (1–5)", fontsize=fontsize)
+    ax.set_ylabel("分数（1–5）", fontsize=fontsize)
     ax.tick_params(axis="y", labelsize=fontsize - 1)
     ax.grid(True, axis="y", alpha=0.28)
     if legend:
@@ -309,6 +294,7 @@ def plot_history_score_panels(
     """独立附图：每用户一子图，仅画历史分数条，便于与主案例图分开排版。"""
     import matplotlib.pyplot as plt
 
+    setup_matplotlib_chinese()
     test = _load(test_json)
     if not isinstance(test, list):
         return
@@ -324,35 +310,15 @@ def plot_history_score_panels(
         r, c = divmod(i, ncols)
         ax = axes[r][c]
         sample = test[uid_m[u]]
-        _plot_history_bars_on_ax(ax, sample, title=f"user {u}", legend=(i == 0))
+        _plot_history_bars_on_ax(ax, sample, title=f"用户 {u}", legend=(i == 0))
     for j in range(i + 1, nrows * ncols):
         r, c = divmod(j, ncols)
         axes[r][c].set_axis_off()
-    fig.suptitle(
-        "User history: preference vs quality (1–5) per interaction in training pool",
-        fontsize=12,
-        y=0.98,
-    )
+    fig.suptitle("用户历史：偏好分与质量分（训练池每条交互，1–5 分）", fontsize=12, y=0.98)
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
-
-
-def _cjk_font_prop():
-    """论文式中文标题；若无 CJK 字体则返回 None（回退英文）。"""
-    from matplotlib.font_manager import FontProperties
-
-    for fp in (
-        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-        "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
-        "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
-        "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
-    ):
-        p = Path(fp)
-        if p.is_file():
-            return FontProperties(fname=str(p))
-    return None
 
 
 def _compose_history_thumb_grid(
@@ -400,7 +366,7 @@ def _empty_bin_placeholder(
     h = cell
     im = Image.new("RGB", (w, h), bg)
     dr = ImageDraw.Draw(im)
-    msg = "(no images in this bin)"
+    msg = "（该区间无图像）"
     try:
         font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 13)
     except Exception:
@@ -462,13 +428,10 @@ def plot_history_pref_high_low_moodboards(
         return
 
     gap = 3
-    cjk = _cjk_font_prop()
-    if cjk:
-        title_hi = f"高分图（偏好 ≥ {high_min}）"
-        title_lo = f"低分图（偏好 ≤ {low_max}）"
-    else:
-        title_hi = f"High-pref history (preference ≥ {high_min})"
-        title_lo = f"Low-pref history (preference ≤ {low_max})"
+    setup_matplotlib_chinese()
+    cjk = cjk_font_properties()
+    title_hi = f"高分图（偏好 ≥ {high_min}）"
+    title_lo = f"低分图（偏好 ≤ {low_max}）"
 
     row_pairs: List[Tuple[object, object, str, int]] = []
     for u in users:
@@ -544,7 +507,7 @@ def plot_history_pref_high_low_moodboards(
         }
         if cjk:
             ukw["fontproperties"] = cjk
-        ax_u.text(0.98, 0.5, f"user\n{u}", **ukw)
+        ax_u.text(0.98, 0.5, f"用户\n{u}", **ukw)
 
         ax1 = fig.add_subplot(gs[r, 1])
         ax1.imshow(np.asarray(im_hi), interpolation="nearest")
@@ -554,7 +517,7 @@ def plot_history_pref_high_low_moodboards(
         ax2.imshow(np.asarray(im_lo), interpolation="nearest")
         ax2.set_axis_off()
 
-    st = "UserPref 历史：高/低偏好图像对照（训练池）" if cjk else "UserPref history: high- vs low-preference images (training pool)"
+    st = "UserPref 历史：高/低偏好图像对照（训练池）"
     st_kw: Dict[str, object] = {"fontsize": 13, "y": 0.995}
     if cjk:
         st_kw["fontproperties"] = cjk
@@ -577,10 +540,11 @@ def plot_case_grid(
     """每行一用户：Target + 各方法（仅此内容，历史信息见独立附图）。"""
     import matplotlib.pyplot as plt
 
+    setup_matplotlib_chinese()
     test = _load(test_json)
     uid_to_first_idx = _uid_to_first_sample_index(test)
 
-    col_labels = ["Target"] + [_method_label(m) for m in method_order]
+    col_labels = ["目标图"] + [_method_label(m) for m in method_order]
     rows_imgs: List[List] = []
     row_user_labels: List[str] = []
     for u in case_users:
@@ -607,7 +571,7 @@ def plot_case_grid(
                     break
             row.append(_thumb(str(gen_p) if gen_p else None, thumb))
         rows_imgs.append(row)
-        row_user_labels.append(f"user {u.strip()}")
+        row_user_labels.append(f"用户 {u.strip()}")
 
     if not rows_imgs:
         return
@@ -630,11 +594,7 @@ def plot_case_grid(
                 ax.set_title(col_labels[ci], fontsize=10, pad=6)
             if ci == 0:
                 ax.set_ylabel(row_user_labels[ri], fontsize=10, rotation=90, va="center", labelpad=12)
-    fig.suptitle(
-        "Qualitative comparison (target vs methods)",
-        fontsize=12,
-        y=0.995,
-    )
+    fig.suptitle("定性对比（目标图与各方法生成结果）", fontsize=12, y=0.995)
     plt.tight_layout(rect=[0.03, 0, 1, 0.96])
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=300, bbox_inches="tight")
@@ -702,7 +662,7 @@ def main():
     _write_md_table(out_dir / "table_3_2_dimensions.md", dim_rows)
 
     # ---- 各方法 summary 表 + CLIP 总体均值 ----
-    lines = ["# Per-method summary (from eval JSON)", ""]
+    lines = ["# 各方法评测汇总（来自 eval JSON）", ""]
     clip_means = []
     clip_i_means: List[Tuple[str, Optional[float], Optional[int]]] = []
     fid_rows = []

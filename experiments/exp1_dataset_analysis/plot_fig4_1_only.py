@@ -30,7 +30,13 @@ def main():
         help="含 train.json / val.json / test.json 的目录",
     )
     ap.add_argument("--out_dir", type=str, default=str(repo / "outputs/experiments/fig4_1_overall_scores"))
-    ap.add_argument("--chinese_labels", action="store_true", help="轴标题用中文（需系统有可用的 CJK 字体）")
+    ap.add_argument(
+        "--chinese_labels",
+        action="store_true",
+        default=True,
+        help="轴标题用中文（默认开启；加 --no-chinese_labels 可关）",
+    )
+    ap.add_argument("--no-chinese_labels", action="store_false", dest="chinese_labels")
     args = ap.parse_args()
     proc = Path(args.processed_dir)
     merged, meta = load_concat_splits(proc)
